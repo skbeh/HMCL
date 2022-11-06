@@ -30,8 +30,6 @@ import org.jackhuang.hmcl.setting.SambaException;
 import org.jackhuang.hmcl.task.AsyncTaskExecutor;
 import org.jackhuang.hmcl.task.Schedulers;
 import org.jackhuang.hmcl.ui.Controllers;
-import org.jackhuang.hmcl.upgrade.UpdateChecker;
-import org.jackhuang.hmcl.upgrade.UpdateHandler;
 import org.jackhuang.hmcl.util.CrashReporter;
 import org.jackhuang.hmcl.util.Lang;
 import org.jackhuang.hmcl.util.StringUtils;
@@ -110,8 +108,6 @@ public final class Launcher extends Application {
                 // Stage.show() cannot work again because JavaFX Toolkit have already shut down.
                 Platform.setImplicitExit(false);
                 Controllers.initialize(primaryStage);
-
-                UpdateChecker.init();
 
                 primaryStage.show();
             });
@@ -212,11 +208,6 @@ public final class Launcher extends Application {
     }
 
     public static void main(String[] args) {
-        if (UpdateHandler.processArguments(args)) {
-            LOG.shutdown();
-            return;
-        }
-
         Thread.setDefaultUncaughtExceptionHandler(CRASH_REPORTER);
         AsyncTaskExecutor.setUncaughtExceptionHandler(new CrashReporter(false));
 

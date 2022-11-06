@@ -386,12 +386,6 @@ public final class Controllers {
 
     public static void onHyperlinkAction(String href) {
         if (href.startsWith("hmcl://")) {
-            switch (href) {
-                case "hmcl://settings/feedback":
-                    Controllers.getSettingsPage().showFeedback();
-                    Controllers.navigate(Controllers.getSettingsPage());
-                    break;
-            }
         } else {
             FXUtils.openLink(href);
         }

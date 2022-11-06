@@ -46,7 +46,6 @@ import org.jackhuang.hmcl.ui.SVG;
 import org.jackhuang.hmcl.ui.animation.ContainerAnimations;
 import org.jackhuang.hmcl.ui.animation.TransitionPane;
 import org.jackhuang.hmcl.ui.construct.ComponentList;
-import org.jackhuang.hmcl.ui.construct.HintPane;
 import org.jackhuang.hmcl.ui.construct.IconedTwoLineListItem;
 import org.jackhuang.hmcl.ui.construct.RipplerContainer;
 import org.jackhuang.hmcl.ui.wizard.Navigation;
@@ -91,13 +90,6 @@ public final class VersionsPage extends BorderPane implements WizardPage, Refres
         this.gameVersion = gameVersion;
         this.libraryId = libraryId;
         this.navigation = navigation;
-
-        HintPane hintPane = new HintPane();
-        hintPane.setText(i18n("sponsor.bmclapi"));
-        hintPane.getStyleClass().add("sponsor-pane");
-        FXUtils.onClicked(hintPane, this::onSponsor);
-        BorderPane.setMargin(hintPane, new Insets(10, 10, 0, 10));
-        this.setTop(hintPane);
 
         root = new TransitionPane();
         {
@@ -260,10 +252,6 @@ public final class VersionsPage extends BorderPane implements WizardPage, Refres
     }
 
     private void onBack() { navigation.onPrev(true); }
-
-    private void onSponsor() {
-        FXUtils.openLink("https://bmclapidoc.bangbang93.com");
-    }
 
     private static class RemoteVersionListCell extends ListCell<RemoteVersion> {
         final IconedTwoLineListItem content = new IconedTwoLineListItem();

@@ -42,7 +42,6 @@ import org.jackhuang.hmcl.ui.nbt.NBTEditorPage;
 import org.jackhuang.hmcl.ui.nbt.NBTHelper;
 import org.jackhuang.hmcl.ui.versions.GameAdvancedListItem;
 import org.jackhuang.hmcl.ui.versions.Versions;
-import org.jackhuang.hmcl.upgrade.UpdateChecker;
 import org.jackhuang.hmcl.util.Lang;
 import org.jackhuang.hmcl.util.StringUtils;
 import org.jackhuang.hmcl.util.TaskCancellationAction;
@@ -109,8 +108,6 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
                     });
 
             FXUtils.onChangeAndOperate(Profiles.selectedVersionProperty(), mainPage::setCurrentGame);
-            mainPage.showUpdateProperty().bind(UpdateChecker.outdatedProperty());
-            mainPage.latestVersionProperty().bind(UpdateChecker.latestVersionProperty());
 
             Profiles.registerVersionsListener(profile -> {
                 HMCLGameRepository repository = profile.getRepository();
@@ -174,13 +171,6 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
             launcherSettingsItem.setTitle(i18n("settings"));
             launcherSettingsItem.setOnAction(e -> Controllers.navigate(Controllers.getSettingsPage()));
 
-            // sixth item in left sidebar
-            AdvancedListItem chatItem = new AdvancedListItem();
-            chatItem.setLeftGraphic(wrap(SVG.CHAT));
-            chatItem.setActionButtonVisible(false);
-            chatItem.setTitle(i18n("chat"));
-            chatItem.setOnAction(e -> FXUtils.openLink("https://docs.hmcl.net/groups.html"));
-
             // the left sidebar
             AdvancedListBox sideBar = new AdvancedListBox()
                     .startCategory(i18n("account").toUpperCase(Locale.ROOT))
@@ -191,7 +181,6 @@ public class RootPage extends DecoratorAnimatedPage implements DecoratorPage {
                     .add(downloadItem)
                     .startCategory(i18n("settings.launcher.general").toUpperCase(Locale.ROOT))
                     .add(launcherSettingsItem)
-                    .add(chatItem)
                     ;
 
             // the root page, with the sidebar in left, navigator in center.
