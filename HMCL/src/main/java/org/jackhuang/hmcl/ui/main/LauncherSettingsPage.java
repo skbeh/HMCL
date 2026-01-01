@@ -43,7 +43,6 @@ public class LauncherSettingsPage extends DecoratorAnimatedPage implements Decor
     private final TabHeader.Tab<DownloadSettingsPage> downloadTab = new TabHeader.Tab<>("downloadSettingsPage");
     private final TabHeader.Tab<HelpPage> helpTab = new TabHeader.Tab<>("helpPage");
     private final TabHeader.Tab<AboutPage> aboutTab = new TabHeader.Tab<>("aboutPage");
-    private final TabHeader.Tab<FeedbackPage> feedbackTab = new TabHeader.Tab<>("feedbackPage");
     private final TransitionPane transitionPane = new TransitionPane();
 
     public LauncherSettingsPage() {
@@ -53,9 +52,8 @@ public class LauncherSettingsPage extends DecoratorAnimatedPage implements Decor
         personalizationTab.setNodeSupplier(PersonalizationPage::new);
         downloadTab.setNodeSupplier(DownloadSettingsPage::new);
         helpTab.setNodeSupplier(HelpPage::new);
-        feedbackTab.setNodeSupplier(FeedbackPage::new);
         aboutTab.setNodeSupplier(AboutPage::new);
-        tab = new TabHeader(transitionPane, gameTab, javaManagementTab, settingsTab, personalizationTab, downloadTab, helpTab, feedbackTab, aboutTab);
+        tab = new TabHeader(transitionPane, gameTab, javaManagementTab, settingsTab, personalizationTab, downloadTab, helpTab, aboutTab);
 
         tab.select(gameTab);
         addEventHandler(Navigator.NavigationEvent.NAVIGATED, event -> gameTab.getNode().loadVersion(Profiles.getSelectedProfile(), null));
@@ -69,7 +67,6 @@ public class LauncherSettingsPage extends DecoratorAnimatedPage implements Decor
                 .addNavigationDrawerTab(tab, downloadTab, i18n("download"), SVG.DOWNLOAD)
                 .startCategory(i18n("help").toUpperCase(Locale.ROOT))
                 .addNavigationDrawerTab(tab, helpTab, i18n("help"), SVG.HELP, SVG.HELP_FILL)
-                .addNavigationDrawerTab(tab, feedbackTab, i18n("contact"), SVG.FEEDBACK, SVG.FEEDBACK_FILL)
                 .addNavigationDrawerTab(tab, aboutTab, i18n("about"), SVG.INFO, SVG.INFO_FILL);
         FXUtils.setLimitWidth(sideBar, 200);
         setLeft(sideBar);
@@ -90,10 +87,6 @@ public class LauncherSettingsPage extends DecoratorAnimatedPage implements Decor
     public void showGameSettings(Profile profile) {
         gameTab.getNode().loadVersion(profile, null);
         tab.select(gameTab, false);
-    }
-
-    public void showFeedback() {
-        tab.select(feedbackTab, false);
     }
 
     @Override

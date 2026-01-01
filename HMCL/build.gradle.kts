@@ -22,9 +22,7 @@ plugins {
 
 val projectConfig = PropertiesUtils.load(rootProject.file("config/project.properties").toPath())
 
-val isOfficial = JenkinsUtils.IS_ON_CI || GitHubActionUtils.IS_ON_OFFICIAL_REPO
-
-val versionType = System.getenv("VERSION_TYPE") ?: if (isOfficial) "nightly" else "unofficial"
+val versionType = System.getenv("VERSION_TYPE") ?: "nightly"
 val versionRoot = System.getenv("VERSION_ROOT") ?: projectConfig.getProperty("versionRoot") ?: "3"
 
 val microsoftAuthId = System.getenv("MICROSOFT_AUTH_ID") ?: ""
@@ -44,10 +42,8 @@ if (buildNumber != null) {
     val shortCommit = System.getenv("GITHUB_SHA")?.lowercase()?.substring(0, 7)
     version = if (shortCommit.isNullOrBlank()) {
         "$versionRoot.SNAPSHOT"
-    } else if (isOfficial) {
-        "$versionRoot.dev-$shortCommit"
     } else {
-        "$versionRoot.unofficial-$shortCommit"
+        "$versionRoot.dev-$shortCommit"
     }
 }
 
@@ -66,47 +62,6 @@ dependencies {
     }
 
     embedResources(libs.authlib.injector)
-}
-
-fun digest(algorithm: String, bytes: ByteArray): ByteArray = MessageDigest.getInstance(algorithm).digest(bytes)
-
-fun createChecksum(file: File) {
-    val algorithms = linkedMapOf(
-        "SHA-1" to "sha1",
-        "SHA-256" to "sha256",
-        "SHA-512" to "sha512"
-    )
-
-    algorithms.forEach { (algorithm, ext) ->
-        File(file.parentFile, "${file.name}.$ext").writeText(
-            digest(algorithm, file.readBytes()).joinToString(separator = "", postfix = "\n") { "%02x".format(it) }
-        )
-    }
-}
-
-fun attachSignature(jar: File) {
-    val keyLocation = System.getenv("HMCL_SIGNATURE_KEY")
-    if (keyLocation == null) {
-        logger.warn("Missing signature key")
-        return
-    }
-
-    val privatekey = KeyFactory.getInstance("RSA").generatePrivate(PKCS8EncodedKeySpec(File(keyLocation).readBytes()))
-    val signer = Signature.getInstance("SHA512withRSA")
-    signer.initSign(privatekey)
-    ZipFile(jar).use { zip ->
-        zip.stream()
-            .sorted(Comparator.comparing { it.name })
-            .filter { it.name != "META-INF/hmcl_signature" }
-            .forEach {
-                signer.update(digest("SHA-512", it.name.toByteArray()))
-                signer.update(digest("SHA-512", zip.getInputStream(it).readBytes()))
-            }
-    }
-    val signature = signer.sign()
-    FileSystems.newFileSystem(URI.create("jar:" + jar.toURI()), emptyMap<String, Any>()).use { zipfs ->
-        Files.newOutputStream(zipfs.getPath("META-INF/hmcl_signature")).use { it.write(signature) }
-    }
 }
 
 tasks.withType<JavaCompile> {
@@ -218,11 +173,6 @@ tasks.shadowJar {
             from(file(launcherExe))
         }
     }
-
-    doLast {
-        attachSignature(jarPath)
-        createChecksum(jarPath)
-    }
 }
 
 tasks.processResources {
@@ -240,11 +190,6 @@ tasks.processResources {
         from(createLanguageList.map { it.outputFile })
         from(upsideDownTranslate.map { it.outputFile })
         from(createLocaleNamesResourceBundle.map { it.outputDirectory })
-    }
-
-    inputs.property("terracotta_version", libs.versions.terracotta)
-    doLast {
-        upgradeTerracottaConfig.get().checkValid()
     }
 }
 
@@ -269,8 +214,6 @@ val makeExecutables by tasks.registering {
                     zipFile.getInputStream(entry).use { it.copyTo(outputStream) }
                     outputStream.write(jarContent)
                 }
-
-                createChecksum(output)
             }
         }
     }
@@ -366,26 +309,6 @@ tasks.register<JavaExec>("run") {
         logger.quiet("HMCL_JAVA_OPTS: {}", vmOptions)
         logger.quiet("HMCL_JAVA_HOME: {}", hmclJavaHome ?: System.getProperty("java.home"))
     }
-}
-
-// terracotta
-
-val upgradeTerracottaConfig = tasks.register<TerracottaConfigUpgradeTask>("upgradeTerracottaConfig") {
-    val destination = layout.projectDirectory.file("src/main/resources/assets/terracotta.json")
-    val source = layout.projectDirectory.file("terracotta-template.json");
-
-    classifiers.set(listOf(
-        "windows-x86_64", "windows-arm64",
-        "macos-x86_64", "macos-arm64",
-        "linux-x86_64", "linux-arm64", "linux-loongarch64", "linux-riscv64",
-        "freebsd-x86_64"
-    ))
-
-    version.set(libs.versions.terracotta)
-    downloadURL.set($$"https://github.com/burningtnt/Terracotta/releases/download/v${version}/terracotta-${version}-${classifier}-pkg.tar.gz")
-
-    templateFile.set(source)
-    outputFile.set(destination)
 }
 
 // Check Translations

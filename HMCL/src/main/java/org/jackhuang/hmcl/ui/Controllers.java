@@ -59,7 +59,6 @@ import org.jackhuang.hmcl.ui.download.DownloadPage;
 import org.jackhuang.hmcl.ui.download.ModpackInstallWizardProvider;
 import org.jackhuang.hmcl.ui.main.LauncherSettingsPage;
 import org.jackhuang.hmcl.ui.main.RootPage;
-import org.jackhuang.hmcl.ui.terracotta.TerracottaPage;
 import org.jackhuang.hmcl.ui.versions.GameListPage;
 import org.jackhuang.hmcl.ui.versions.VersionPage;
 import org.jackhuang.hmcl.ui.versions.Versions;
@@ -116,7 +115,6 @@ public final class Controllers {
         return accountListPage;
     });
     private static LauncherSettingsPage settingsPage;
-    private static Lazy<TerracottaPage> terracottaPage = new Lazy<>(TerracottaPage::new);
 
     private Controllers() {
     }
@@ -190,11 +188,6 @@ public final class Controllers {
             LOG.info("Prepare the download page");
             downloadPage = FXUtils.prepareNode(new DownloadPage());
         }
-    }
-
-    // FXThread
-    public static Node getTerracottaPage() {
-        return terracottaPage.get();
     }
 
     // FXThread
@@ -413,25 +406,6 @@ public final class Controllers {
                             config().getShownTips().put(SOFTWARE_RENDERING, true))
                     .build());
         }
-
-        if (globalConfig().getAgreementVersion() < 1) {
-            JFXDialogLayout agreementPane = new JFXDialogLayout();
-            agreementPane.setHeading(new Label(i18n("launcher.agreement")));
-            agreementPane.setBody(new Label(i18n("launcher.agreement.hint")));
-            JFXHyperlink agreementLink = new JFXHyperlink(i18n("launcher.agreement"));
-            agreementLink.setExternalLink(Metadata.EULA_URL);
-            JFXButton yesButton = new JFXButton(i18n("launcher.agreement.accept"));
-            yesButton.getStyleClass().add("dialog-accept");
-            yesButton.setOnAction(e -> {
-                globalConfig().setAgreementVersion(1);
-                agreementPane.fireEvent(new DialogCloseEvent());
-            });
-            JFXButton noButton = new JFXButton(i18n("launcher.agreement.decline"));
-            noButton.getStyleClass().add("dialog-cancel");
-            noButton.setOnAction(e -> javafx.application.Platform.exit());
-            agreementPane.setActions(agreementLink, yesButton, noButton);
-            Controllers.dialog(agreementPane);
-        }
     }
 
     public static void dialog(Region content) {
@@ -549,10 +523,6 @@ public final class Controllers {
     public static void onHyperlinkAction(String href) {
         if (href.startsWith("hmcl://")) {
             switch (href) {
-                case "hmcl://settings/feedback":
-                    Controllers.getSettingsPage().showFeedback();
-                    Controllers.navigate(Controllers.getSettingsPage());
-                    break;
                 case "hmcl://game/launch":
                     Profile profile = Profiles.getSelectedProfile();
                     Versions.launch(profile, profile.getSelectedVersion(), LauncherHelper::setKeep);
@@ -574,7 +544,6 @@ public final class Controllers {
         downloadPage = null;
         accountListPage = null;
         settingsPage = null;
-        terracottaPage = null;
         decorator = null;
         stage = null;
         scene = null;

@@ -45,10 +45,6 @@ import org.jackhuang.hmcl.ui.construct.ComponentSublist;
 import org.jackhuang.hmcl.ui.construct.MessageDialogPane.MessageType;
 import org.jackhuang.hmcl.ui.construct.MultiFileItem;
 import org.jackhuang.hmcl.ui.construct.OptionToggleButton;
-import org.jackhuang.hmcl.upgrade.RemoteVersion;
-import org.jackhuang.hmcl.upgrade.UpdateChannel;
-import org.jackhuang.hmcl.upgrade.UpdateChecker;
-import org.jackhuang.hmcl.upgrade.UpdateHandler;
 import org.jackhuang.hmcl.util.StringUtils;
 import org.jackhuang.hmcl.util.i18n.I18n;
 import org.jackhuang.hmcl.util.i18n.SupportedLocale;
@@ -79,11 +75,6 @@ import static org.jackhuang.hmcl.util.logging.Logger.LOG;
 
 public final class SettingsPage extends ScrollPane {
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private final ToggleGroup updateChannelGroup;
-    @SuppressWarnings("FieldCanBeLocal")
-    private final InvalidationListener updateListener;
-
     public SettingsPage() {
         this.setFitToWidth(true);
 
@@ -94,136 +85,6 @@ public final class SettingsPage extends ScrollPane {
 
         ComponentList settingsPane = new ComponentList();
         {
-            {
-                StackPane sponsorPane = new StackPane();
-                sponsorPane.setCursor(Cursor.HAND);
-                FXUtils.onClicked(sponsorPane, this::onSponsor);
-                sponsorPane.setPadding(new Insets(8, 0, 8, 0));
-
-                GridPane gridPane = new GridPane();
-
-                ColumnConstraints col = new ColumnConstraints();
-                col.setHgrow(Priority.SOMETIMES);
-                col.setMaxWidth(Double.POSITIVE_INFINITY);
-
-                gridPane.getColumnConstraints().setAll(col);
-
-                RowConstraints row = new RowConstraints();
-                row.setMinHeight(Double.NEGATIVE_INFINITY);
-                row.setValignment(VPos.TOP);
-                row.setVgrow(Priority.SOMETIMES);
-                gridPane.getRowConstraints().setAll(row);
-
-                {
-                    Label label = new Label(i18n("sponsor.hmcl"));
-                    label.setWrapText(true);
-                    label.setTextAlignment(TextAlignment.JUSTIFY);
-                    GridPane.setRowIndex(label, 0);
-                    GridPane.setColumnIndex(label, 0);
-                    gridPane.getChildren().add(label);
-                }
-
-                sponsorPane.getChildren().setAll(gridPane);
-                settingsPane.getContent().add(sponsorPane);
-            }
-
-            {
-                ComponentSublist updatePane = new ComponentSublist();
-                updatePane.setTitle(i18n("update"));
-                updatePane.setHasSubtitle(true);
-
-                final Label lblUpdate;
-                final Label lblUpdateSub;
-                {
-                    VBox headerLeft = new VBox();
-
-                    lblUpdate = new Label(i18n("update"));
-                    lblUpdate.getStyleClass().add("title-label");
-                    lblUpdateSub = new Label();
-                    lblUpdateSub.getStyleClass().add("subtitle-label");
-
-                    headerLeft.getChildren().setAll(lblUpdate, lblUpdateSub);
-                    updatePane.setHeaderLeft(headerLeft);
-                }
-
-                {
-                    JFXButton btnUpdate = new JFXButton();
-                    btnUpdate.setOnAction(e -> onUpdate());
-                    btnUpdate.getStyleClass().add("toggle-icon4");
-                    btnUpdate.setGraphic(SVG.UPDATE.createIcon(20));
-                    FXUtils.installFastTooltip(btnUpdate, i18n("update.tooltip"));
-
-                    updateListener = any -> {
-                        btnUpdate.setVisible(UpdateChecker.isOutdated());
-
-                        if (UpdateChecker.isOutdated()) {
-                            lblUpdateSub.setText(i18n("update.newest_version", UpdateChecker.getLatestVersion().getVersion()));
-                            lblUpdateSub.getStyleClass().setAll("update-label");
-
-                            lblUpdate.setText(i18n("update.found"));
-                            lblUpdate.getStyleClass().setAll("update-label");
-                        } else if (UpdateChecker.isCheckingUpdate()) {
-                            lblUpdateSub.setText(i18n("update.checking"));
-                            lblUpdateSub.getStyleClass().setAll("subtitle-label");
-
-                            lblUpdate.setText(i18n("update"));
-                            lblUpdate.getStyleClass().setAll("title-label");
-                        } else {
-                            lblUpdateSub.setText(i18n("update.latest"));
-                            lblUpdateSub.getStyleClass().setAll("subtitle-label");
-
-                            lblUpdate.setText(i18n("update"));
-                            lblUpdate.getStyleClass().setAll("title-label");
-                        }
-                    };
-                    UpdateChecker.latestVersionProperty().addListener(new WeakInvalidationListener(updateListener));
-                    UpdateChecker.outdatedProperty().addListener(new WeakInvalidationListener(updateListener));
-                    UpdateChecker.checkingUpdateProperty().addListener(new WeakInvalidationListener(updateListener));
-                    updateListener.invalidated(null);
-
-                    updatePane.setHeaderRight(btnUpdate);
-                }
-
-                {
-                    VBox content = new VBox();
-                    content.setSpacing(8);
-
-                    JFXRadioButton chkUpdateStable = new JFXRadioButton(i18n("update.channel.stable"));
-                    JFXRadioButton chkUpdateDev = new JFXRadioButton(i18n("update.channel.dev"));
-
-                    updateChannelGroup = new ToggleGroup();
-                    chkUpdateDev.setToggleGroup(updateChannelGroup);
-                    chkUpdateDev.setUserData(UpdateChannel.DEVELOPMENT);
-                    chkUpdateStable.setToggleGroup(updateChannelGroup);
-                    chkUpdateStable.setUserData(UpdateChannel.STABLE);
-
-                    Label noteWrapper = new Label(i18n("update.note"));
-                    VBox.setMargin(noteWrapper, new Insets(10, 0, 0, 0));
-
-                    content.getChildren().setAll(chkUpdateStable, chkUpdateDev, noteWrapper);
-
-                    updatePane.getContent().add(content);
-                }
-                settingsPane.getContent().add(updatePane);
-            }
-
-            {
-                OptionToggleButton previewPane = new OptionToggleButton();
-                previewPane.setTitle(i18n("update.preview"));
-                previewPane.setSubtitle(i18n("update.preview.subtitle"));
-                previewPane.selectedProperty().bindBidirectional(config().acceptPreviewUpdateProperty());
-
-                ObjectProperty<UpdateChannel> updateChannel = selectedItemPropertyFor(updateChannelGroup, UpdateChannel.class);
-                updateChannel.set(UpdateChannel.getChannel());
-                InvalidationListener checkUpdateListener = e -> {
-                    UpdateChecker.requestCheckUpdate(updateChannel.get(), previewPane.isSelected());
-                };
-                updateChannel.addListener(checkUpdateListener);
-                previewPane.selectedProperty().addListener(checkUpdateListener);
-
-                settingsPane.getContent().add(previewPane);
-            }
-
             {
                 MultiFileItem<EnumCommonDirectory> fileCommonLocation = new MultiFileItem<>();
                 fileCommonLocation.loadChildren(Arrays.asList(
@@ -320,14 +181,6 @@ public final class SettingsPage extends ScrollPane {
 
     private void openLogFolder() {
         FXUtils.openFolder(LOG.getLogFile().getParent());
-    }
-
-    private void onUpdate() {
-        RemoteVersion target = UpdateChecker.getLatestVersion();
-        if (target == null) {
-            return;
-        }
-        UpdateHandler.updateFrom(target);
     }
 
     /// This method guarantees to close both `input` and the current zip entry.
@@ -444,10 +297,6 @@ public final class SettingsPage extends ScrollPane {
             Platform.runLater(() -> Controllers.dialog(i18n("settings.launcher.launcher_log.export.success", outputFile)));
             FXUtils.showFileInExplorer(outputFile);
         });
-    }
-
-    private void onSponsor() {
-        FXUtils.openLink("https://github.com/HMCL-dev/HMCL");
     }
 
     private void clearCacheDirectory() {

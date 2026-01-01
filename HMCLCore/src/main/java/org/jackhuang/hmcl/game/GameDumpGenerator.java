@@ -164,10 +164,6 @@ public final class GameDumpGenerator {
     }
 
     private static InputStream executeJVMCommand(VirtualMachine vm, String command) throws IOException, AttachNotSupportedException {
-        if (vm instanceof sun.tools.attach.HotSpotVirtualMachine) {
-            return ((sun.tools.attach.HotSpotVirtualMachine) vm).executeJCmd(command);
-        } else {
-            throw new AttachNotSupportedException("Unsupported VM implementation " + vm.getClass().getName());
-        }
+        throw new AttachNotSupportedException("Unsupported VM implementation " + vm.getClass().getName());
     }
 }

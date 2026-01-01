@@ -23,8 +23,6 @@ import javafx.scene.control.Alert.AlertType;
 import org.jackhuang.hmcl.Metadata;
 import org.jackhuang.hmcl.countly.CrashReport;
 import org.jackhuang.hmcl.ui.CrashWindow;
-import org.jackhuang.hmcl.upgrade.IntegrityChecker;
-import org.jackhuang.hmcl.upgrade.UpdateChecker;
 import org.jackhuang.hmcl.util.io.NetworkUtils;
 
 import java.io.IOException;
@@ -103,9 +101,6 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
                     if (showCrashWindow) {
                         new CrashWindow(report).show();
                     }
-                    if (!UpdateChecker.isOutdated() && IntegrityChecker.isSelfVerified()) {
-                        reportToServer(report);
-                    }
                 }
             });
         } catch (Throwable handlingException) {
@@ -114,23 +109,5 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
 
         FileSaver.shutdown();
         LOG.shutdown();
-    }
-
-    private void reportToServer(CrashReport crashReport) {
-        Thread t = new Thread(() -> {
-            HashMap<String, String> map = new HashMap<>();
-            map.put("crash_report", crashReport.getDisplayText());
-            map.put("version", Metadata.VERSION);
-            map.put("log", LOG.getLogs());
-            try {
-                String response = NetworkUtils.doPost(URI.create(Metadata.PUBLISH_URL + "/hmcl/crash.php"), map);
-                if (StringUtils.isNotBlank(response))
-                    LOG.error("Crash server response: " + response);
-            } catch (IOException ex) {
-                LOG.error("Unable to post HMCL server.", ex);
-            }
-        });
-        t.setDaemon(true);
-        t.start();
     }
 }
